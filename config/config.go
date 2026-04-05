@@ -1,0 +1,79 @@
+package config
+
+import (
+	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
+
+// Assets holds the file paths for all media assets used in the project.
+type Assets struct {
+	IntroVO      string `yaml:"intro_vo"`
+	TitleCard    string `yaml:"title_card"`
+	DevlogVideo  string `yaml:"devlog_video"`
+}
+
+// Settings holds the project's technical parameters.
+type Settings struct {
+	FPS                       int     `yaml:"fps"`
+	TargetLUFS                float64 `yaml:"target_lufs"`
+	TransitionDurationSeconds int     `yaml:"transition_duration_seconds"`
+	CompressorSpecPath        string  `yaml:"compressor_spec_path"`
+}
+
+// Config is the top-level configuration loaded from a YAML file.
+type Config struct {
+	ProjectName string   `yaml:"project_name"`
+	LibraryPath string   `yaml:"library_path"`
+	OutputDir   string   `yaml:"output_dir"`
+	Assets      Assets   `yaml:"assets"`
+	Settings    Settings `yaml:"settings"`
+}
+
+// Load reads and parses a YAML config file from the given path.
+func Load(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading config file %q: %w", path, err)
+	}
+
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parsing config file %q: %w", path, err)
+	}
+
+	if err := cfg.validate(); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
+
+	return &cfg, nil
+}
+
+func (c *Config) validate() error {
+	if c.ProjectName == "" {
+		return fmt.Errorf("project_name is required")
+	}
+	if c.LibraryPath == "" {
+		return fmt.Errorf("library_path is required")
+	}
+	if c.OutputDir == "" {
+		return fmt.Errorf("output_dir is required")
+	}
+	if c.Assets.IntroVO == "" {
+		return fmt.Errorf("assets.intro_vo is required")
+	}
+	if c.Assets.TitleCard == "" {
+		return fmt.Errorf("assets.title_card is required")
+	}
+	if c.Assets.DevlogVideo == "" {
+		return fmt.Errorf("assets.devlog_video is required")
+	}
+	if c.Settings.FPS <= 0 {
+		return fmt.Errorf("settings.fps must be greater than zero")
+	}
+	if c.Settings.CompressorSpecPath == "" {
+		return fmt.Errorf("settings.compressor_spec_path is required")
+	}
+	return nil
+}
