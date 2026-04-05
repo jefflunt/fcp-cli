@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"github.com/spf13/pflag"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,14 +16,15 @@ import (
 )
 
 func main() {
-	configPath := flag.String("config", "config.yaml", "path to the YAML configuration file")
-	keepWAV := flag.Bool("keep-wav", false, "keep intermediate normalized WAV file after rendering")
-	flag.Parse()
+	var configPath string
+	pflag.StringVarP(&configPath, "config", "c", "config.yaml", "path to the YAML configuration file")
+	keepWAV := pflag.Bool("keep-wav", false, "keep intermediate normalized WAV file after rendering")
+	pflag.Parse()
 
 	log.SetFlags(0)
 	log.SetPrefix("[fcp-cli] ")
 
-	if err := run(*configPath, *keepWAV); err != nil {
+	if err := run(configPath, *keepWAV); err != nil {
 		log.Printf("error: %v", err)
 		os.Exit(1)
 	}
