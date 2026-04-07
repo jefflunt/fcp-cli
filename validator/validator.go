@@ -35,9 +35,11 @@ func CheckDependencies() error {
 // CheckAssets verifies that all required asset files exist on disk.
 func CheckAssets(introVO, titleCard, devlogVideo string) error {
 	paths := map[string]string{
-		"assets.intro_vo":     introVO,
 		"assets.title_card":   titleCard,
 		"assets.devlog_video": devlogVideo,
+	}
+	if introVO != "" {
+		paths["assets.intro_vo"] = introVO
 	}
 	for field, p := range paths {
 		if _, err := os.Stat(p); os.IsNotExist(err) {

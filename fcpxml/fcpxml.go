@@ -23,20 +23,20 @@ type Params struct {
 
 // templateData is the internal view model passed to the FCPXML template.
 type templateData struct {
-	Version        string
-	FormatName     string
-	FrameDuration  string
-	LibraryURI     string
-	ProjectName    string
-	TitleCardURI   string
-	IntroVOURI     string
-	DevlogURI      string
-	NormAudioURI   string
-	TotalDur       string
-	IntroDur       string
-	DevlogDur      string
-	TransitionDur  string
-	DevlogOffset   string
+	Version       string
+	FormatName    string
+	FrameDuration string
+	LibraryURI    string
+	ProjectName   string
+	TitleCardURI  string
+	IntroVOURI    string
+	DevlogURI     string
+	NormAudioURI  string
+	TotalDur      string
+	IntroDur      string
+	DevlogDur     string
+	TransitionDur string
+	DevlogOffset  string
 }
 
 // tickDur formats an FCP frame-count duration as "[n]/[fps]s".
@@ -54,7 +54,8 @@ var fcpxmlTemplate = template.Must(template.New("fcpxml").Parse(`<?xml version="
     <resources>
         <format id="r1" name="{{.FormatName}}" frameDuration="{{.FrameDuration}}" width="3840" height="2160"/>
         <asset id="r2" name="title_card" src="{{.TitleCardURI}}" duration="{{.IntroDur}}"/>
-        <asset id="r3" name="intro_vo" src="{{.IntroVOURI}}" duration="{{.IntroDur}}"/>
+        <asset id="r2" name="title_card" src="{{.TitleCardURI}}" duration="{{.IntroDur}}"/>
+        {{if .IntroVOURI}}<asset id="r3" name="intro_vo" src="{{.IntroVOURI}}" duration="{{.IntroDur}}"/>{{end}}
         <asset id="r4" name="devlog_video" src="{{.DevlogURI}}" duration="{{.DevlogDur}}"/>
         <asset id="r5" name="norm_audio" src="{{.NormAudioURI}}" duration="{{.DevlogDur}}"/>
     </resources>
@@ -63,10 +64,12 @@ var fcpxmlTemplate = template.Must(template.New("fcpxml").Parse(`<?xml version="
             <project name="Assembled_Timeline">
                 <sequence format="r1" duration="{{.TotalDur}}">
                     <spine>
+                        {{if .IntroVOURI}}
                         <video ref="r2" offset="0/1s" duration="{{.IntroDur}}">
                             <audio lane="-1" ref="r3" offset="0/1s" duration="{{.IntroDur}}" role="dialogue"/>
                         </video>
                         <transition name="Cross Dissolve" offset="{{.IntroDur}}" duration="{{.TransitionDur}}"/>
+                        {{end}}
                         <video ref="r4" offset="{{.DevlogOffset}}" duration="{{.DevlogDur}}">
                             <audio lane="-1" ref="r5" offset="{{.DevlogOffset}}" duration="{{.DevlogDur}}" role="dialogue"/>
                         </video>
@@ -92,7 +95,6 @@ func Generate(p Params, outPath string) error {
 		LibraryURI:    fileURI(p.LibraryPath),
 		ProjectName:   p.ProjectName,
 		TitleCardURI:  fileURI(p.TitleCardPath),
-		IntroVOURI:    fileURI(p.IntroVOPath),
 		DevlogURI:     fileURI(p.DevlogPath),
 		NormAudioURI:  fileURI(p.NormAudioPath),
 		TotalDur:      tickDur(p.IntroDurTicks+p.TransitionTicks+p.DevlogDurTicks, p.FPS),
@@ -100,6 +102,9 @@ func Generate(p Params, outPath string) error {
 		DevlogDur:     tickDur(p.DevlogDurTicks, p.FPS),
 		TransitionDur: tickDur(p.TransitionTicks, p.FPS),
 		DevlogOffset:  tickDur(p.IntroDurTicks+p.TransitionTicks, p.FPS),
+	}
+	if p.IntroVOPath != "" {
+		data.IntroVOURI = fileURI(p.IntroVOPath)
 	}
 
 	f, err := os.Create(outPath)

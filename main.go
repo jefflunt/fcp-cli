@@ -46,8 +46,13 @@ func run(configPath string, keepWAV bool) error {
 
 	// ── Step 1b: Validate asset files ─────────────────────────────────────────
 	log.Println("checking asset files...")
+	var introVOPath string
+	if s, ok := cfg.Assets.IntroVO.(string); ok {
+		introVOPath = s
+	}
+
 	if err := validator.CheckAssets(
-		cfg.Assets.IntroVO,
+		introVOPath,
 		cfg.Assets.TitleCard,
 		cfg.Assets.DevlogVideo,
 	); err != nil {
@@ -55,9 +60,13 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	// Resolve all asset paths to absolute paths so FCPXML URIs are correct.
-	introVOAbs, err := filepath.Abs(cfg.Assets.IntroVO)
-	if err != nil {
-		return fmt.Errorf("resolving intro_vo path: %w", err)
+	var introVOAbs string
+	if introVOPath != "" {
+		var err error
+		introVOAbs, err = filepath.Abs(introVOPath)
+		if err != nil {
+			return fmt.Errorf("resolving intro_vo path: %w", err)
+		}
 	}
 	titleCardAbs, err := filepath.Abs(cfg.Assets.TitleCard)
 	if err != nil {
@@ -85,10 +94,18 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	// ── Step 3: Probe durations ───────────────────────────────────────────────
-	log.Printf("probing duration of intro_vo: %s", introVOAbs)
-	introDurSec, err := probe.Duration(introVOAbs)
-	if err != nil {
-		return fmt.Errorf("probing intro_vo duration: %w", err)
+	var introDurSec float64
+	var introDurTicks int64
+	var transitionTicks int64
+	if introVOAbs != "" {
+		log.Printf("probing duration of intro_vo: %s", introVOAbs)
+		var err error
+		introDurSec, err = probe.Duration(introVOAbs)
+		if err != nil {
+			return fmt.Errorf("probing intro_vo duration: %w", err)
+		}
+		introDurTicks = probe.SecondsToTicks(introDurSec, cfg.Settings.FPS)
+		transitionTicks = int64(float64(cfg.Settings.TransitionDurationSeconds) * float64(cfg.Settings.FPS))
 	}
 
 	log.Printf("probing duration of devlog_video: %s", devlogVideoAbs)
@@ -98,13 +115,13 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	fps := cfg.Settings.FPS
-	introDurTicks := probe.SecondsToTicks(introDurSec, fps)
 	devlogDurTicks := probe.SecondsToTicks(devlogDurSec, fps)
-	transitionTicks := int64(float64(cfg.Settings.TransitionDurationSeconds) * float64(fps))
 
-	log.Printf("intro duration:  %.3fs (%d ticks @ %d fps)", introDurSec, introDurTicks, fps)
 	log.Printf("devlog duration: %.3fs (%d ticks @ %d fps)", devlogDurSec, devlogDurTicks, fps)
-	log.Printf("transition:      %d ticks @ %d fps", transitionTicks, fps)
+	if introVOAbs != "" {
+		log.Printf("intro duration:  %.3fs (%d ticks @ %d fps)", introDurSec, introDurTicks, fps)
+		log.Printf("transition:      %d ticks @ %d fps", transitionTicks, fps)
+	}
 
 	// ── Step 4: FCPXML generation ─────────────────────────────────────────────
 	fcpxmlPath := filepath.Join(outputDirAbs, cfg.ProjectName+".fcpxml")

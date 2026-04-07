@@ -9,9 +9,9 @@ import (
 
 // Assets holds the file paths for all media assets used in the project.
 type Assets struct {
-	IntroVO      string `yaml:"intro_vo"`
-	TitleCard    string `yaml:"title_card"`
-	DevlogVideo  string `yaml:"devlog_video"`
+	IntroVO     any    `yaml:"intro_vo"`
+	TitleCard   string `yaml:"title_card"`
+	DevlogVideo string `yaml:"devlog_video"`
 }
 
 // Settings holds the project's technical parameters.
@@ -60,8 +60,16 @@ func (c *Config) validate() error {
 	if c.OutputDir == "" {
 		return fmt.Errorf("output_dir is required")
 	}
-	if c.Assets.IntroVO == "" {
-		return fmt.Errorf("assets.intro_vo is required")
+	if val, ok := c.Assets.IntroVO.(string); ok {
+		if val == "" {
+			return fmt.Errorf("assets.intro_vo is required")
+		}
+	} else if val, ok := c.Assets.IntroVO.(bool); ok {
+		if val {
+			return fmt.Errorf("assets.intro_vo must be a string path or false")
+		}
+	} else {
+		return fmt.Errorf("assets.intro_vo must be a string path or false")
 	}
 	if c.Assets.TitleCard == "" {
 		return fmt.Errorf("assets.title_card is required")
