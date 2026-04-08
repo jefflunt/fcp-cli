@@ -45,12 +45,25 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	// ── Step 1b: Validate asset files ─────────────────────────────────────────
-	log.Println("checking asset files...")
+	log.Println("validating configuration paths...")
 	var introVOPath string
 	if s, ok := cfg.Assets.IntroVO.(string); ok {
 		introVOPath = s
 	}
 
+	if err := validator.CheckPaths(
+		cfg.LibraryPath,
+		cfg.OutputDir,
+		cfg.Assets.TitleCard,
+		cfg.Assets.DevlogVideo,
+		introVOPath,
+		cfg.Settings.CompressorSpecPath,
+	); err != nil {
+		return fmt.Errorf("config path check failed: %w", err)
+	}
+	log.Println("all configuration paths valid")
+
+	log.Println("checking asset files...")
 	if err := validator.CheckAssets(
 		introVOPath,
 		cfg.Assets.TitleCard,

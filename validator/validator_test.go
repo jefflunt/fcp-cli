@@ -43,3 +43,23 @@ func TestCheckAssets_MissingFile(t *testing.T) {
 		t.Error("expected error for missing asset, got nil")
 	}
 }
+
+func TestCheckPaths_AllPresent(t *testing.T) {
+	dir := t.TempDir()
+
+	p1 := filepath.Join(dir, "lib.fclib")
+	p2 := filepath.Join(dir, "output")
+	p3 := filepath.Join(dir, "title.png")
+	p4 := filepath.Join(dir, "video.mov")
+	p5 := filepath.Join(dir, "compressor.app")
+
+	for _, p := range []string{p1, p2, p3, p4, p5} {
+		if err := os.WriteFile(p, []byte{}, 0o644); err != nil {
+			t.Fatalf("creating fixture %s: %v", p, err)
+		}
+	}
+
+	if err := validator.CheckPaths(p1, p2, p3, p4, "", p5); err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+}

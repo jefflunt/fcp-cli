@@ -12,11 +12,12 @@ const binary = "/Applications/Compressor.app/Contents/MacOS/Compressor"
 func Render(fcpxmlPath, settingPath, outDir string) error {
 	outputPath := outDir + "/final_render.mp4"
 
+	// The Compressor CLI documentation indicates -locationpath is the correct flag.
 	cmd := exec.Command(
 		binary,
 		"-jobpath", fcpxmlPath,
 		"-settingpath", settingPath,
-		"-location", outputPath,
+		"-locationpath", outputPath,
 	)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
