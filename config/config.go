@@ -3,9 +3,27 @@ package config
 import (
 	"fmt"
 	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+// expandTilde replaces the leading ~ with the user's home directory.
+func expandTilde(path string) (string, error) {
+	if !strings.HasPrefix(path, "~") {
+		return path, nil
+	}
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	if len(path) == 1 {
+		return usr.HomeDir, nil
+	}
+	return filepath.Join(usr.HomeDir, path[2:]), nil
+}
 
 // Assets holds the file paths for all media assets used in the project.
 type Assets struct {
@@ -41,6 +59,32 @@ func Load(path string) (*Config, error) {
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("parsing config file %q: %w", path, err)
+	}
+
+	// Expand tildes in paths
+	cfg.LibraryPath, err = expandTilde(cfg.LibraryPath)
+	if err != nil {
+		return nil, fmt.Errorf("expanding library_path %q: %w", cfg.LibraryPath, err)
+	}
+	cfg.OutputDir, err = expandTilde(cfg.OutputDir)
+	if err != nil {
+		return nil, fmt.Errorf("expanding output_dir %q: %w", cfg.OutputDir, err)
+	}
+	if introVO, ok := cfg.Assets.IntroVO.(string); ok && introVO != "" {
+		var expanded string
+		expanded, err = expandTilde(introVO)
+		if err != nil {
+			return nil, fmt.Errorf("expanding intro_vo %q: %w", introVO, err)
+		}
+		cfg.Assets.IntroVO = expanded
+	}
+	cfg.Assets.TitleCard, err = expandTilde(cfg.Assets.TitleCard)
+	if err != nil {
+		return nil, fmt.Errorf("expanding title_card %q: %w", cfg.Assets.TitleCard, err)
+	}
+	cfg.Assets.DevlogVideo, err = expandTilde(cfg.Assets.DevlogVideo)
+	if err != nil {
+		return nil, fmt.Errorf("expanding devlog_video %q: %w", cfg.Assets.DevlogVideo, err)
 	}
 
 	if err := cfg.validate(); err != nil {
