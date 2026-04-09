@@ -59,7 +59,7 @@ func TestCheckPaths_AllPresent(t *testing.T) {
 		}
 	}
 
-	if err := validator.CheckPaths(p1, p2, p3, p4, "", p5); err != nil {
+	if err := validator.CheckPaths(p1, p2, p3, p4, ""); err != nil {
 		t.Errorf("expected no error, got: %v", err)
 	}
 }

@@ -33,7 +33,8 @@ settings:
   fps: 30
   target_lufs: -14.0
   transition_duration_seconds: 4
-  compressor_spec_path: "Built-In/Apple Devices/4K (H.264)"
+  compressor_spec_path: "some/path"
+final_render: "/tmp/final.mp4"
 `
 
 func TestLoad_Valid(t *testing.T) {
