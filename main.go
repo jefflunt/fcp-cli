@@ -8,10 +8,9 @@ import (
 	"path/filepath"
 
 	"github.com/jefflunt/fcp-cli/audio"
-	"github.com/jefflunt/fcp-cli/compressor"
 	"github.com/jefflunt/fcp-cli/config"
-	"github.com/jefflunt/fcp-cli/fcpxml"
 	"github.com/jefflunt/fcp-cli/probe"
+	"github.com/jefflunt/fcp-cli/render"
 	"github.com/jefflunt/fcp-cli/validator"
 )
 
@@ -39,7 +38,7 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	// ── Step 1a: Validate external dependencies ───────────────────────────────
-	log.Println("checking dependencies (ffmpeg, ffprobe, Compressor)...")
+	log.Println("checking dependencies (ffmpeg, ffprobe)...")
 	if err := validator.CheckDependencies(); err != nil {
 		return fmt.Errorf("dependency check failed: %w", err)
 	}
@@ -57,7 +56,6 @@ func run(configPath string, keepWAV bool) error {
 		cfg.Assets.TitleCard,
 		cfg.Assets.DevlogVideo,
 		introVOPath,
-		cfg.Settings.CompressorSpecPath,
 	); err != nil {
 		return fmt.Errorf("config path check failed: %w", err)
 	}
@@ -85,6 +83,8 @@ func run(configPath string, keepWAV bool) error {
 	if err != nil {
 		return fmt.Errorf("resolving title_card path: %w", err)
 	}
+	_ = titleCardAbs // Keep variable to minimize diff, or remove it
+
 	devlogVideoAbs, err := filepath.Abs(cfg.Assets.DevlogVideo)
 	if err != nil {
 		return fmt.Errorf("resolving devlog_video path: %w", err)
@@ -136,32 +136,15 @@ func run(configPath string, keepWAV bool) error {
 		log.Printf("transition:      %d ticks @ %d fps", transitionTicks, fps)
 	}
 
-	// ── Step 4: FCPXML generation ─────────────────────────────────────────────
-	fcpxmlPath := filepath.Join(outputDirAbs, cfg.ProjectName+".fcpxml")
-	log.Printf("generating FCPXML → %s", fcpxmlPath)
+	// ── Step 4: Render video ──────────────────────────────────────────────────
+	outputPath := filepath.Join(outputDirAbs, "final_render.mp4")
+	log.Printf("rendering final video → %s", outputPath)
 
-	if err := fcpxml.Generate(fcpxml.Params{
-		ProjectName:     cfg.ProjectName,
-		LibraryPath:     cfg.LibraryPath,
-		TitleCardPath:   titleCardAbs,
-		IntroVOPath:     introVOAbs,
-		DevlogPath:      devlogVideoAbs,
-		NormAudioPath:   normWAVPath,
-		FPS:             fps,
-		IntroDurTicks:   introDurTicks,
-		DevlogDurTicks:  devlogDurTicks,
-		TransitionTicks: transitionTicks,
-	}, fcpxmlPath); err != nil {
-		return fmt.Errorf("FCPXML generation: %w", err)
+	if err := render.Render(devlogVideoAbs, normWAVPath, outputPath); err != nil {
+		return fmt.Errorf("rendering video: %w", err)
 	}
 
-	// ── Step 5: Compressor render ─────────────────────────────────────────────
-	log.Printf("submitting to Compressor: %s", fcpxmlPath)
-	if err := compressor.Render(fcpxmlPath, cfg.Settings.CompressorSpecPath, outputDirAbs); err != nil {
-		return fmt.Errorf("Compressor render: %w", err)
-	}
-
-	log.Printf("done! output written to %s/final_render.mp4", outputDirAbs)
+	log.Printf("done! output written to %s", outputPath)
 
 	// ── Cleanup ───────────────────────────────────────────────────────────────
 	if !keepWAV {

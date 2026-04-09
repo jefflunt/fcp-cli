@@ -8,7 +8,7 @@ import (
 
 const compressorBinary = "/Applications/Compressor.app/Contents/MacOS/Compressor"
 
-// CheckDependencies verifies that ffmpeg, ffprobe, and Apple Compressor are
+// CheckDependencies verifies that ffmpeg, ffprobe are
 // available on the host system.
 func CheckDependencies() error {
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
@@ -25,21 +25,16 @@ func CheckDependencies() error {
 		return fmt.Errorf("ffprobe -version failed: %w\n%s", err, out)
 	}
 
-	if _, err := os.Stat(compressorBinary); os.IsNotExist(err) {
-		return fmt.Errorf("Apple Compressor not found at %s", compressorBinary)
-	}
-
 	return nil
 }
 
-// CheckPaths verifies that all paths in the config exist.
-func CheckPaths(libraryPath, outputDir, titleCard, devlogVideo, introVO, compressorSpecPath string) error {
+// CheckPaths verifies that all required paths in the config exist.
+func CheckPaths(libraryPath, outputDir, titleCard, devlogVideo, introVO string) error {
 	paths := map[string]string{
-		"library_path":                  libraryPath,
-		"output_dir":                    outputDir,
-		"assets.title_card":             titleCard,
-		"assets.devlog_video":           devlogVideo,
-		"settings.compressor_spec_path": compressorSpecPath,
+		"library_path":        libraryPath,
+		"output_dir":          outputDir,
+		"assets.title_card":   titleCard,
+		"assets.devlog_video": devlogVideo,
 	}
 	if introVO != "" {
 		paths["assets.intro_vo"] = introVO
