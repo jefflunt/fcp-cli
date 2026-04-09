@@ -47,6 +47,7 @@ type Config struct {
 	OutputDir   string   `yaml:"output_dir"`
 	Assets      Assets   `yaml:"assets"`
 	Settings    Settings `yaml:"settings"`
+	FinalRender string   `yaml:"final_render"`
 }
 
 // Load reads and parses a YAML config file from the given path.
@@ -85,6 +86,10 @@ func Load(path string) (*Config, error) {
 	cfg.Assets.DevlogVideo, err = expandTilde(cfg.Assets.DevlogVideo)
 	if err != nil {
 		return nil, fmt.Errorf("expanding devlog_video %q: %w", cfg.Assets.DevlogVideo, err)
+	}
+	cfg.FinalRender, err = expandTilde(cfg.FinalRender)
+	if err != nil {
+		return nil, fmt.Errorf("expanding final_render %q: %w", cfg.FinalRender, err)
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -126,6 +131,9 @@ func (c *Config) validate() error {
 	}
 	if c.Settings.CompressorSpecPath == "" {
 		return fmt.Errorf("settings.compressor_spec_path is required")
+	}
+	if c.FinalRender == "" {
+		return fmt.Errorf("final_render is required")
 	}
 	return nil
 }

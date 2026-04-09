@@ -137,7 +137,7 @@ func run(configPath string, keepWAV bool) error {
 	}
 
 	// ── Step 4: Render video ──────────────────────────────────────────────────
-	outputPath := filepath.Join(outputDirAbs, "final_render.mp4")
+	outputPath := cfg.FinalRender
 	log.Printf("rendering final video → %s", outputPath)
 
 	if err := render.Render(devlogVideoAbs, normWAVPath, outputPath); err != nil {
