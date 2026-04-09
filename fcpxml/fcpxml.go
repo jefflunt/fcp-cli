@@ -2,23 +2,24 @@ package fcpxml
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"text/template"
 )
 
-// Params holds all values needed to render an FCPXML document.
-type Params struct {
-	ProjectName     string
-	LibraryPath     string
-	TitleCardPath   string
-	IntroVOPath     string
-	DevlogPath      string
-	NormAudioPath   string
-	FPS             int
-	IntroDurTicks   int64
-	DevlogDurTicks  int64
-	TransitionTicks int64
+// tickDur formats an FCP frame-count duration as "[n]/[fps]s".
+func tickDur(ticks int64, fps int) string {
+	return fmt.Sprintf("%d/%ds", ticks, fps)
+}
+
+// fileURI converts an absolute path to a file:// URI.
+func fileURI(absPath string) string {
+	u := url.URL{
+		Scheme: "file",
+		Path:   absPath,
+	}
+	return u.String()
 }
 
 // templateData is the internal view model passed to the FCPXML template.
@@ -53,7 +54,6 @@ var fcpxmlTemplate = template.Must(template.New("fcpxml").Parse(`<?xml version="
 <fcpxml version="{{.Version}}">
     <resources>
         <format id="r1" name="{{.FormatName}}" frameDuration="{{.FrameDuration}}" width="3840" height="2160"/>
-        <asset id="r2" name="title_card" src="{{.TitleCardURI}}" duration="{{.IntroDur}}"/>
         <asset id="r2" name="title_card" src="{{.TitleCardURI}}" duration="{{.IntroDur}}"/>
         {{if .IntroVOURI}}<asset id="r3" name="intro_vo" src="{{.IntroVOURI}}" duration="{{.IntroDur}}"/>{{end}}
         <asset id="r4" name="devlog_video" src="{{.DevlogURI}}" duration="{{.DevlogDur}}"/>
