@@ -8,18 +8,18 @@ import (
 	"text/template"
 )
 
-// tickDur formats an FCP frame-count duration as "[n]/[fps]s".
-func tickDur(ticks int64, fps int) string {
-	return fmt.Sprintf("%d/%ds", ticks, fps)
-}
-
-// fileURI converts an absolute path to a file:// URI.
-func fileURI(absPath string) string {
-	u := url.URL{
-		Scheme: "file",
-		Path:   absPath,
-	}
-	return u.String()
+// Params holds all values needed to render an FCPXML document.
+type Params struct {
+	ProjectName     string
+	LibraryPath     string
+	TitleCardPath   string
+	IntroVOPath     string
+	DevlogPath      string
+	NormAudioPath   string
+	FPS             int
+	IntroDurTicks   int64
+	DevlogDurTicks  int64
+	TransitionTicks int64
 }
 
 // templateData is the internal view model passed to the FCPXML template.
@@ -47,7 +47,11 @@ func tickDur(ticks int64, fps int) string {
 
 // fileURI converts an absolute path to a file:// URI.
 func fileURI(absPath string) string {
-	return "file://" + absPath
+	u := url.URL{
+		Scheme: "file",
+		Path:   absPath,
+	}
+	return u.String()
 }
 
 var fcpxmlTemplate = template.Must(template.New("fcpxml").Parse(`<?xml version="1.0" encoding="UTF-8"?>
