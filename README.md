@@ -7,7 +7,7 @@ Final Cut Pro + FCPXML + ffmpeg + Compressor to automate the creation of videos 
 You need Go 1.22+ and external dependencies (ffmpeg, ffprobe, Compressor).
 
 ```bash
-go build -o fcp-cli main.go
+./script/build-test-install*
 ```
 
 ### Usage
